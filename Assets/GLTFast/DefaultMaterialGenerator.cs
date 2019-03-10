@@ -12,6 +12,14 @@ namespace GLTFast {
 
         Material defaultMaterial;
 
+        public static Color LinearToSRGB(Color linear) {
+            return new Color(
+                Mathf.LinearToGammaSpace(linear.r),
+                Mathf.LinearToGammaSpace(linear.g),
+                Mathf.LinearToGammaSpace(linear.b),
+                linear.a
+                );
+        }
         public UnityEngine.Material GetDefaultMaterial() {
             if(defaultMaterial==null) {
                 defaultMaterial = Resources.Load<UnityEngine.Material>("Material");
@@ -24,7 +32,7 @@ namespace GLTFast {
             material.name = gltfMaterial.name;
 
             if(gltfMaterial.pbrMetallicRoughness!=null) {
-				material.color = gltfMaterial.pbrMetallicRoughness.baseColor;
+                material.color = LinearToSRGB( gltfMaterial.pbrMetallicRoughness.baseColor );
 				material.SetFloat(StandardShaderHelper.metallicPropId, gltfMaterial.pbrMetallicRoughness.metallicFactor );
 				material.SetFloat(StandardShaderHelper.glossinessPropId, 1-gltfMaterial.pbrMetallicRoughness.roughnessFactor );
 
