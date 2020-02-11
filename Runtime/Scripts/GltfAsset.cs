@@ -10,6 +10,7 @@ namespace GLTFast
     {
         public string url;
 
+        protected IMaterialGenerator materialGenerator;
         protected GLTFast gLTFastInstance;
         Coroutine loadRoutine;
         protected IDeferAgent deferAgent;
@@ -24,7 +25,7 @@ namespace GLTFast
             }
         }
 
-        public void Load( string url = null, IDeferAgent deferAgent=null ) {
+        public void Load( string url = null, IDeferAgent deferAgent=null, IMaterialGenerator matGenerator=null ) {
             if(url!=null) {
                 this.url = url;
             }
@@ -32,6 +33,11 @@ namespace GLTFast
                 this.deferAgent = deferAgent ?? new DeferTimer();
                 loadRoutine = StartCoroutine(LoadRoutine());
             }
+            if(matGenerator==null)
+            {
+                matGenerator = new DefaultMaterialGenerator();
+            }
+            materialGenerator = matGenerator;
         }
 
         IEnumerator LoadRoutine()
@@ -50,7 +56,7 @@ namespace GLTFast
 
         protected virtual IEnumerator LoadContent( DownloadHandler dlh ) {
             deferAgent.Reset();
-            gLTFastInstance = new GLTFast();
+            gLTFastInstance = new GLTFast(materialGenerator);
 
             bool allFine = true;
 

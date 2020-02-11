@@ -65,8 +65,9 @@ public class SampleModelsTest
 			Assert.NotNull(bytes);
 			Assert.Greater(bytes.Length, 0);
 
-			var go = new GameObject();         
-			var glTFast = new GLTFast.GLTFast();
+			var go = new GameObject();
+            var materialGenerator = new DefaultMaterialGenerator();
+            var glTFast = new GLTFast.GLTFast(materialGenerator);
             glTFast.LoadGlb(bytes, path);
 			Assert.False(glTFast.LoadingError);
 			yield return glTFast.WaitForBufferDownloads();
@@ -112,8 +113,9 @@ public class SampleModelsTest
             Assert.NotNull(json);
             Assert.Greater(json.Length, 0);
 
-            var go = new GameObject( GltfSampleModels.GetNameFromPath(file) );    
-            var glTFast = new GLTFast.GLTFast();
+            var go = new GameObject( GltfSampleModels.GetNameFromPath(file) );
+            var materialGenerator = new DefaultMaterialGenerator();
+            var glTFast = new GLTFast.GLTFast(materialGenerator);
             glTFast.LoadGltf(json, path);
 			Assert.IsFalse(glTFast.LoadingError);
 

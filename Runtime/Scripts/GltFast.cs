@@ -70,8 +70,8 @@ namespace GLTFast {
             return new Uri( uri, ".").AbsoluteUri;
         }
 
-        public GLTFast() {
-            materialGenerator = new DefaultMaterialGenerator();
+        public GLTFast(IMaterialGenerator matGenerator) {
+            materialGenerator = matGenerator;
         }
 
         void ParseJsonAndLoadBuffers( string json, string baseUri ) {
