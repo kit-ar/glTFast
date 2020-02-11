@@ -74,7 +74,7 @@ namespace GLTFast {
             materialGenerator = matGenerator;
         }
 
-        void ParseJsonAndLoadBuffers( string json, string baseUri ) {
+        void ParseJsonAndLoadBuffers( string json, Func<string, string> urlFunc) {
             gltfRoot = ParseJson(json);
 
             if(!CheckExtensionSupport(gltfRoot)) {
@@ -99,7 +99,8 @@ namespace GLTFast {
                             loadingError = true;
                         }
                     } else {
-                        LoadBuffer( i, baseUri+buffer.uri );
+                        string uri = urlFunc(buffer.uri);
+                        LoadBuffer( i, uri);
                     }
                 }
             }
@@ -185,15 +186,19 @@ namespace GLTFast {
             return true;
         }
 
-        public void LoadGltf( string json, string url ) {
+        public void LoadGltf( string json, string url, Func<string, string> urlOverrideFunc = null) {
             var baseUri = GetUriBase(url);
-            ParseJsonAndLoadBuffers(json,baseUri);
+            if(urlOverrideFunc == null)
+            {
+                urlOverrideFunc = (uri) => { return baseUri + uri; };
+            }
+            ParseJsonAndLoadBuffers(json, urlOverrideFunc);
             if(!loadingError) {
-                LoadImages(baseUri);
+                LoadImages(urlOverrideFunc);
             }
         }
 
-        void LoadImages( string baseUri ) {
+        void LoadImages(Func<string, string> urlFunc) {
 
             if (gltfRoot.images != null) {
                 images = new Texture2D[gltfRoot.images.Length];
@@ -222,7 +227,8 @@ namespace GLTFast {
                             if (img.bufferView < 0 && !string.IsNullOrEmpty(img.uri))
                             {
                                 // Not Inside buffer
-                                LoadTexture(i,baseUri+img.uri);
+                                string uri = urlFunc(img.uri);
+                                LoadTexture(i,uri);
                             }
                         } else {
                             Debug.LogErrorFormat("Unknown image format (image {0};uri:{1})",i,img.uri);
@@ -238,7 +244,7 @@ namespace GLTFast {
                     yield return dl.Value;
                     var www = dl.Value.webRequest;
                     if(www.isNetworkError || www.isHttpError) {
-                        Debug.LogError(www.error);
+                        Debug.LogError(www.error + "|" + www.url);
                     }
                     else {
                         buffers[dl.Key] = www.downloadHandler.data;
@@ -262,7 +268,7 @@ namespace GLTFast {
                     yield return dl.Value;
                     var www = dl.Value.webRequest;
                     if(www.isNetworkError || www.isHttpError) {
-                        Debug.LogError(www.error);
+                        Debug.LogError(www.error + "|" + www.url);
                     }
                     else {
                         images[dl.Key] = ( www.downloadHandler as  DownloadHandlerTexture ).texture;
@@ -315,7 +321,7 @@ namespace GLTFast {
             textureDownloads[index] = www.SendWebRequest();
         }
 
-        public bool LoadGlb( byte[] bytes, string url ) {
+        public bool LoadGlb( byte[] bytes, string url, Func<string,string> urlOverrideFunc = null) {
             uint magic = BitConverter.ToUInt32( bytes, 0 );
 
             if (magic != GLB_MAGIC) {
@@ -337,6 +343,10 @@ namespace GLTFast {
             int index = 12; // first chung header
 
             var baseUri = GetUriBase(url);
+            if(urlOverrideFunc == null)
+            {
+                urlOverrideFunc = (uri) => { return baseUri + uri; };
+            }
 
             while( index < bytes.Length ) {
                 uint chLength = BitConverter.ToUInt32( bytes, index );
@@ -355,7 +365,7 @@ namespace GLTFast {
                     Assert.IsNull(gltfRoot);
                     string json = System.Text.Encoding.UTF8.GetString(bytes, index, (int)chLength );
                     //Debug.Log( string.Format("chunk: JSON; length: {0}", json ) );
-                    ParseJsonAndLoadBuffers(json,baseUri);
+                    ParseJsonAndLoadBuffers(json, urlOverrideFunc);
                     if(loadingError) {
                         return false;
                     }
@@ -371,7 +381,7 @@ namespace GLTFast {
                     binChunks[0] = glbBinChunk.Value;
                     buffers[0] = bytes;
                 }
-                LoadImages(baseUri);
+                LoadImages(urlOverrideFunc);
                 return !loadingError;
             } else {
                 Debug.LogError("Invalid JSON chunk");

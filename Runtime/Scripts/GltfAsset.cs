@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
@@ -8,9 +9,12 @@ namespace GLTFast
 {
     public class GltfAsset : MonoBehaviour
     {
+        public bool autoStart = false;
         public string url;
 
         protected IMaterialGenerator materialGenerator;
+        Func<string, string> urlFunc;
+
         protected GLTFast gLTFastInstance;
         Coroutine loadRoutine;
         protected IDeferAgent deferAgent;
@@ -20,13 +24,18 @@ namespace GLTFast
         // Use this for initialization
         void Start()
         {
+            if (!autoStart)
+                return;
+
             if(!string.IsNullOrEmpty(url)){
                 Load();
             }
         }
 
-        public void Load( string url = null, IDeferAgent deferAgent=null, IMaterialGenerator matGenerator=null ) {
-            if(url!=null) {
+        public void Load( string url = null, IDeferAgent deferAgent=null, IMaterialGenerator matGenerator=null, Func<string,string> urlOverrideFunc=null ) {
+
+            urlFunc = urlOverrideFunc;
+            if (url!=null) {
                 this.url = url;
             }
             if(gLTFastInstance==null && loadRoutine==null) {
@@ -106,7 +115,7 @@ namespace GLTFast
 
         protected virtual void LoadContentPrimary(GLTFast gLTFastInstance, DownloadHandler dlh, string url) {
             string json = dlh.text;
-            gLTFastInstance.LoadGltf(json,url);
+            gLTFastInstance.LoadGltf(json,url, urlFunc);
         }
 
         public IEnumerator WaitForLoaded() {
